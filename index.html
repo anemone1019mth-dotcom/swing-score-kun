@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>スイング採点くん Ver.1.0β</title>
+  <meta name="theme-color" content="#07111f">
+  <style>
+    :root{
+      --bg:#07111f; --card:#0f172a; --text:#f8fafc; --muted:#94a3b8;
+      --accent:#38bdf8; --good:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+      --line:rgba(255,255,255,.10);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+      background:radial-gradient(circle at top left,rgba(56,189,248,.20),transparent 34%),
+      radial-gradient(circle at bottom right,rgba(34,197,94,.10),transparent 30%),
+      linear-gradient(180deg,#07111f,#020617 62%);
+      color:var(--text);
+    }
+    header{
+      padding:20px 16px 12px; position:sticky; top:0; z-index:10;
+      backdrop-filter:blur(16px); background:rgba(7,17,31,.86); border-bottom:1px solid var(--line);
+    }
+    h1{font-size:22px;margin:0 0 6px}
+    .version{display:inline-block;background:#0ea5e9;color:white;font-size:12px;font-weight:900;border-radius:999px;padding:5px 9px;margin-left:8px}
+    .sub,.mini{color:var(--muted);font-size:13px;line-height:1.55}
+    main{padding:14px;max-width:1080px;margin:auto}
+    .card{background:rgba(15,23,42,.88);border:1px solid var(--line);border-radius:20px;padding:15px;margin:13px 0;box-shadow:0 14px 34px rgba(0,0,0,.34)}
+    label{display:block;font-size:13px;color:var(--muted);margin:0 0 8px}
+    input,select,button,textarea{width:100%;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:#020617;color:var(--text);padding:12px;font-size:16px}
+    textarea{min-height:82px;resize:vertical}
+    button{background:linear-gradient(135deg,#38bdf8,#2563eb);border:0;font-weight:900;margin-top:10px;cursor:pointer}
+    button.secondary{background:#1f2937}
+    button.danger{background:#7f1d1d}
+    .stage{position:relative;width:100%;border-radius:18px;overflow:hidden;background:#000;border:1px solid var(--line);margin-top:10px}
+    video,canvas{width:100%;display:block}
+    canvas{position:absolute;inset:0;pointer-events:none}
+    .splitLine{position:absolute;left:50%;top:0;bottom:0;width:2px;background:rgba(56,189,248,.85);box-shadow:0 0 12px rgba(56,189,248,.8)}
+    .tag{position:absolute;top:10px;padding:6px 10px;border-radius:999px;background:rgba(2,6,23,.75);border:1px solid var(--line);font-size:12px;font-weight:800}
+    .tag.left{left:10px}.tag.right{right:10px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    @media(max-width:760px){.grid,.grid3{grid-template-columns:1fr}}
+    .scoreWrap{text-align:center;padding:8px 0}
+    .score{font-size:64px;font-weight:1000;letter-spacing:-3px;background:linear-gradient(135deg,#e0f2fe,#38bdf8);-webkit-background-clip:text;color:transparent}
+    .badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#082f49;color:#7dd3fc;font-size:12px;font-weight:800}
+    .item{margin:12px 0}
+    .row{display:flex;justify-content:space-between;gap:10px;font-size:14px;margin-bottom:6px}
+    .bar{height:10px;background:#020617;border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+    .fill{height:100%;border-radius:999px;transition:.8s}
+    .tip{background:#020617;border-left:4px solid var(--accent);padding:12px;border-radius:12px;color:#dbeafe;line-height:1.55;font-size:14px;margin-top:12px}
+    .pillrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .pill{font-size:12px;background:#020617;border:1px solid rgba(255,255,255,.1);padding:7px 9px;border-radius:999px;color:#cbd5e1}
+    .status{padding:10px 12px;border-radius:14px;background:#020617;color:#cbd5e1;border:1px solid rgba(255,255,255,.08);font-size:13px;line-height:1.5}
+    .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+    .box{background:#020617;border:1px solid rgba(255,255,255,.08);border-radius:15px;padding:12px}
+    .box strong{display:block;font-size:20px;margin-top:4px}
+    @media(max-width:760px){.kpi{grid-template-columns:1fr 1fr}}
+    .history{display:grid;gap:10px}
+    .histItem{background:#020617;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px}
+    .histTop{display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .histScore{font-weight:1000;font-size:22px;color:#7dd3fc}
+    .tiny{font-size:11px;color:var(--muted);line-height:1.45}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+</head>
+<body>
+<header>
+  <h1>スイング採点くん <span class="version">Ver.1.0β</span></h1>
+  <div class="sub">正面＋後方2分割専用。AI骨格、候補検出、球筋予測、AIコーチ、履歴保存。</div>
+</header>
+
+<main>
+  <section class="card">
+    <label>正面＋後方の2分割動画を選択（左：正面 / 右：後方）</label>
+    <input id="videoInput" type="file" accept="video/*" />
+    <div class="stage">
+      <video id="video" controls playsinline muted></video>
+      <canvas id="canvas"></canvas>
+      <div class="splitLine"></div>
+      <div class="tag left">左：正面</div>
+      <div class="tag right">右：後方</div>
+    </div>
+    <div class="grid">
+      <button onclick="startAI()">AIチェック開始</button>
+      <button class="secondary" onclick="autoSampleScore()">動画を5地点平均採点</button>
+    </div>
+    <button class="secondary" onclick="scoreCurrent()">この瞬間だけ採点</button>
+    <p id="status" class="status">Ver.1.0β。動画を入れてAIチェック開始。</p>
+  </section>
+
+  <section class="card">
+    <span class="badge">FRAME CONTROL</span>
+    <div class="grid3" style="margin-top:10px">
+      <button class="secondary" onclick="stepFrame(-1)">◀ 1コマ戻す</button>
+      <button class="secondary" onclick="togglePlayPause()">再生 / 停止</button>
+      <button class="secondary" onclick="stepFrame(1)">1コマ進める ▶</button>
+    </div>
+    <div class="grid" style="margin-top:10px">
+      <button onclick="detectSwingPoints()">トップ/インパクト/フィニッシュ候補検出</button>
+      <button class="secondary" onclick="scoreDetectedPoints()">検出3地点を採点</button>
+    </div>
+    <p id="pointStatus" class="status">候補検出は簡易版。トップ、インパクト、フィニッシュの3地点を推定するよ。</p>
+    <div id="pointButtons" class="pillrow"></div>
+  </section>
+
+  <section class="card">
+    <div class="grid3">
+      <div><label>クラブ</label><select id="club"><option>ドライバー</option><option>3W</option><option>5U</option><option>6鉄</option><option selected>7鉄</option><option>PW/ウェッジ</option></select></div>
+      <div><label>球筋メモ</label><select id="ball"><option>右プッシュ</option><option>スライス</option><option>フック</option><option>チーピン</option><option>薄い当たり</option><option selected>ナイスショット</option></select></div>
+      <div><label>力感</label><select id="power"><option value="90">7割</option><option value="80" selected>8割</option><option value="70">マン振り気味</option></select></div>
+    </div>
+    <label style="margin-top:12px">メモ</label>
+    <textarea id="memo" placeholder="例：左肩一本。右肘右前ポケット。フィニッシュ前のめり。"></textarea>
+  </section>
+
+  <section class="card">
+    <span class="badge">LIVE MEASURE</span>
+    <div class="kpi">
+      <div class="box"><span class="mini">肩角</span><strong id="shoulderAngle">--°</strong></div>
+      <div class="box"><span class="mini">腰角</span><strong id="hipAngle">--°</strong></div>
+      <div class="box"><span class="mini">手元高さ</span><strong id="handHeight">--</strong></div>
+      <div class="box"><span class="mini">検出安定</span><strong id="detectStable">--</strong></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="badge">SWING ANALYTICS</span>
+    <div class="kpi">
+      <div class="box"><span class="mini">左肩回転指数</span><strong id="leftShoulderIndex">--</strong></div>
+      <div class="box"><span class="mini">前傾維持率</span><strong id="postureRate">--%</strong></div>
+      <div class="box"><span class="mini">手元ブレ</span><strong id="handDrift">--</strong></div>
+      <div class="box"><span class="mini">球筋予測</span><strong id="ballPredict">--</strong></div>
+    </div>
+    <div class="tip" id="coachComment">AIチェックを開始すると、ここに今日の注意点が出るよ。</div>
+  </section>
+
+  <section id="result" class="card" style="display:none">
+    <div class="scoreWrap">
+      <span class="badge">AI COACH SCORE</span>
+      <div class="score" id="total">--</div>
+      <div id="rank" class="sub"></div>
+    </div>
+    <div id="bars"></div>
+    <div class="tip" id="advice"></div>
+    <div class="pillrow" id="drills"></div>
+    <div class="grid" style="margin-top:12px">
+      <button onclick="saveHistory()">この結果を保存</button>
+      <button class="secondary" onclick="copyReport()">結果をコピー</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="histTop">
+      <span class="badge">HISTORY</span>
+      <button class="danger" onclick="clearHistory()" style="width:auto;padding:8px 12px;margin:0">履歴削除</button>
+    </div>
+    <div id="history" class="history" style="margin-top:10px"></div>
+  </section>
+</main>
+
+<script>
+const videoInput=document.getElementById('videoInput'),video=document.getElementById('video'),canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d'),statusEl=document.getElementById('status');
+let pose=null,running=false,lastLandmarks=null,lastResult=null,detectedPoints=[];
+videoInput.addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;video.src=URL.createObjectURL(file);video.onloadedmetadata=()=>{resizeCanvas();statusEl.textContent="動画OK。左＝正面、右＝後方で読むよ。";};});
+window.addEventListener('resize',resizeCanvas);window.addEventListener('load',renderHistory);
+function resizeCanvas(){const rect=video.getBoundingClientRect();canvas.width=video.videoWidth||rect.width;canvas.height=video.videoHeight||rect.height;}
+function clamp(n,min,max){return Math.max(min,Math.min(max,n))}
+function dist(a,b){if(!a||!b)return 0;const dx=a.x-b.x,dy=a.y-b.y;return Math.sqrt(dx*dx+dy*dy)}
+function angleBetween(a,b){if(!a||!b)return null;return Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI}
+async function initPose(){if(pose)return;if(typeof Pose==="undefined"){statusEl.textContent="AI部品を読み込めなかった。ネット接続を確認してね。";return;}pose=new Pose({locateFile:file=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`});pose.setOptions({modelComplexity:1,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:.5,minTrackingConfidence:.5});pose.onResults(onResults);}
+async function startAI(){await initPose();if(!pose)return;running=true;statusEl.textContent="AIチェック中。骨格線が出たら採点できる。";loopPose();}
+async function loopPose(){if(!running||!pose){requestAnimationFrame(loopPose);return;}if(!video.paused&&!video.ended){resizeCanvas();await pose.send({image:video});}requestAnimationFrame(loopPose);}
+function onResults(results){ctx.clearRect(0,0,canvas.width,canvas.height);if(!results.poseLandmarks){statusEl.textContent="体が見つからない。全身が入る位置で撮ると読みやすい。";return;}lastLandmarks=results.poseLandmarks;if(typeof drawConnectors!=="undefined"&&typeof POSE_CONNECTIONS!=="undefined"){drawConnectors(ctx,results.poseLandmarks,POSE_CONNECTIONS,{lineWidth:4});drawLandmarks(ctx,results.poseLandmarks,{lineWidth:2,radius:3});}updateLive(results.poseLandmarks);}
+function metrics(lm){const LSH=lm[11],RSH=lm[12],LHIP=lm[23],RHIP=lm[24],LANK=lm[27],RANK=lm[28],LWR=lm[15],RWR=lm[16];const shoulderAngle=angleBetween(LSH,RSH)||0,hipAngle=angleBetween(LHIP,RHIP)||0,shoulderHipDiff=Math.abs(shoulderAngle-hipAngle),stanceWidth=dist(LANK,RANK),handHeight=((LWR?.y||0)+(RWR?.y||0))/2,shoulderHeight=((LSH?.y||0)+(RSH?.y||0))/2,visibleCount=lm.filter(p=>(p.visibility??1)>.35).length;return{shoulderAngle,hipAngle,shoulderHipDiff,stanceWidth,handHeight,shoulderHeight,visibleCount};}
+function updateLive(lm){const m=metrics(lm);document.getElementById('shoulderAngle').textContent=Math.round(m.shoulderAngle)+"°";document.getElementById('hipAngle').textContent=Math.round(m.hipAngle)+"°";document.getElementById('handHeight').textContent=Math.round((1-m.handHeight)*100)+"%";document.getElementById('detectStable').textContent=clamp(Math.round(50+m.visibleCount*2),45,99)+"%";updateAnalytics(m);}
+function updateAnalytics(m){const shoulderIndex=clamp(Math.round(100-Math.abs(m.shoulderAngle)*.9),30,99),postureRate=clamp(Math.round(100-m.shoulderHipDiff*1.4),35,99),handDrift=clamp(Math.round(Math.abs(m.handHeight-m.shoulderHeight)*100),0,99),prediction=predictBall(m);document.getElementById('leftShoulderIndex').textContent=shoulderIndex;document.getElementById('postureRate').textContent=postureRate+"%";document.getElementById('handDrift').textContent=handDrift;document.getElementById('ballPredict').textContent=prediction.label;document.getElementById('coachComment').textContent=prediction.comment;}
+function predictBall(m){const ballInput=document.getElementById('ball')?.value||"ナイスショット";let riskPush=0,riskHook=0,riskThin=0;riskPush+=Math.abs(m.shoulderAngle)>18?18:5;riskPush+=m.handHeight<m.shoulderHeight?12:4;riskHook+=ballInput==="フック"||ballInput==="チーピン"?22:4;riskThin+=m.shoulderHipDiff>18?18:4;riskThin+=Math.abs(m.handHeight-m.shoulderHeight)>0.16?14:3;if(ballInput==="右プッシュ"||ballInput==="スライス")riskPush+=25;if(ballInput==="薄い当たり")riskThin+=25;const maxRisk=Math.max(riskPush,riskHook,riskThin);if(maxRisk===riskPush)return{label:"右プッシュ注意",comment:"右に出やすい気配。右手で押す前に、右肘を右前ポケットへ落として左肩一本で回す。"};if(maxRisk===riskHook)return{label:"つかまり注意",comment:"返し過ぎ注意。胸を止めずに左へ振り抜くと、チーピンの火種を消しやすい。"};return{label:"薄い当たり注意",comment:"起き上がり注意。前傾に対する手の高さを変えず、インパクト後まで胸を回そう。"};}
+function makeScore(lm,mode="瞬間採点"){const club=document.getElementById('club').value,ball=document.getElementById('ball').value,power=Number(document.getElementById('power').value),m=metrics(lm);let leftShoulder=clamp(Math.round(100-Math.abs(m.shoulderAngle)*.9),35,99),posture=clamp(Math.round(100-m.shoulderHipDiff*1.4),35,99),xFactor=clamp(Math.round(88-Math.abs(Math.abs(m.shoulderAngle)-Math.abs(m.hipAngle))*.6),40,96),finish=clamp(58+m.stanceWidth*160,45,96),frontHand=clamp(94-Math.abs(m.handHeight-m.shoulderHeight)*118,45,96),rearPlane=clamp(92-Math.abs(m.shoulderAngle)*.75,45,96),rearHand=clamp(94-Math.abs(m.handHeight-m.shoulderHeight)*120,45,96),detect=clamp(50+m.visibleCount*2.2,45,96),tempo=power;if(club==="ドライバー"){finish-=2;rearPlane-=2}if(ball==="右プッシュ"||ball==="スライス"){rearPlane-=5;rearHand-=4}if(ball==="チーピン"||ball==="フック"){finish-=4}if(ball==="薄い当たり"){posture-=5;frontHand-=4}if(ball==="ナイスショット"){finish+=2;rearPlane+=2}const items=[["左肩回転指数",leftShoulder],["前傾維持率",posture],["肩腰差/Xファクター",xFactor],["フィニッシュ安定",Math.round(finish)],["手元高さ",Math.round(frontHand)],["後方プレーン",Math.round(rearPlane)],["手元の通り道",Math.round(rearHand)],["検出安定度",Math.round(detect)],["力感コントロール",Math.round(tempo)]];const total=Math.round(items.reduce((a,b)=>a+b[1],0)/items.length);return{total,items,club,ball,power,mode,time:video.currentTime||0};}
+function showResult(result){lastResult=result;document.getElementById('result').style.display='block';document.getElementById('total').textContent=result.total+"点";document.getElementById('rank').textContent=result.total>=85?"かなり良い。今日の感覚は保存案件。":result.total>=75?"実戦OK。弱い項目を1個だけ直そう。":result.total>=65?"練習向き。右手が出る前に左肩一本へ戻す日。":"整備日。7割スイングとフィニッシュ停止で土台作り。";const bars=document.getElementById('bars');bars.innerHTML="";result.items.forEach(([name,val])=>{const color=val>=82?"var(--good)":val>=68?"var(--warn)":"var(--bad)";bars.innerHTML+=`<div class="item"><div class="row"><strong>${name}</strong><span>${val}点</span></div><div class="bar"><div class="fill" style="width:${val}%;background:${color}"></div></div></div>`});document.getElementById('advice').textContent=makeAdvice(result);document.getElementById('drills').innerHTML=makeDrills(result).map(d=>`<span class="pill">${d}</span>`).join("");document.getElementById('result').scrollIntoView({behavior:"smooth"});}
+function scoreCurrent(){if(!lastLandmarks){statusEl.textContent="まだ骨格が取れてない。動画を再生してAIチェック開始してね。";return;}showResult(makeScore(lastLandmarks,"瞬間採点"));}
+async function autoSampleScore(){await initPose();if(!pose||!video.duration){statusEl.textContent="動画を読み込んでから試してね。";return;}const samples=[],points=[.18,.32,.48,.64,.80].map(p=>video.duration*p);for(let i=0;i<points.length;i++){video.currentTime=points[i];await wait(450);await pose.send({image:video});if(lastLandmarks)samples.push(makeScore(lastLandmarks,"5地点平均"));statusEl.textContent=`5地点平均中 ${i+1}/5`;}if(!samples.length)return;showAverage(samples,"5地点平均");statusEl.textContent="5地点平均で採点完了。";}
+function showAverage(samples,mode){const names=samples[0].items.map(x=>x[0]);const avgItems=names.map((name,idx)=>[name,Math.round(samples.reduce((a,s)=>a+s.items[idx][1],0)/samples.length)]);const avgTotal=Math.round(samples.reduce((a,s)=>a+s.total,0)/samples.length);showResult({total:avgTotal,items:avgItems,club:document.getElementById('club').value,ball:document.getElementById('ball').value,power:Number(document.getElementById('power').value),mode,time:0});}
+function stepFrame(dir){if(!video.duration)return;video.pause();video.currentTime=clamp(video.currentTime+dir*(1/30),0,video.duration);}
+function togglePlayPause(){video.paused?video.play():video.pause();}
+async function detectSwingPoints(){await initPose();if(!pose||!video.duration){document.getElementById('pointStatus').textContent="動画を読み込んでから試してね。";return;}const original=video.currentTime||0,samples=[],count=15;video.pause();for(let i=0;i<count;i++){const t=video.duration*(.08+.84*i/(count-1));video.currentTime=t;await wait(260);await pose.send({image:video});if(lastLandmarks){const wristY=((lastLandmarks[15]?.y||0)+(lastLandmarks[16]?.y||0))/2,wristX=((lastLandmarks[15]?.x||0)+(lastLandmarks[16]?.x||0))/2,ankleY=((lastLandmarks[27]?.y||1)+(lastLandmarks[28]?.y||1))/2,shoulderY=((lastLandmarks[11]?.y||0)+(lastLandmarks[12]?.y||0))/2;samples.push({t,wristY,wristX,handHighScore:1-wristY,impactScore:Math.abs(wristY-(shoulderY+(ankleY-shoulderY)*.55)),score:makeScore(lastLandmarks,"候補検出")});}document.getElementById('pointStatus').textContent=`候補検出中 ${i+1}/${count}`;}video.currentTime=original;if(samples.length<3){document.getElementById('pointStatus').textContent="候補が少なかった。";return;}const top=[...samples].sort((a,b)=>b.handHighScore-a.handHighScore)[0],impact=[...samples].sort((a,b)=>a.impactScore-b.impactScore)[0],finish=[...samples].sort((a,b)=>b.t-a.t)[0];detectedPoints=[{name:"トップ候補",...top},{name:"インパクト候補",...impact},{name:"フィニッシュ候補",...finish}].sort((a,b)=>a.t-b.t);renderDetectedPoints();document.getElementById('pointStatus').textContent="候補検出完了。";}
+function renderDetectedPoints(){document.getElementById('pointButtons').innerHTML=detectedPoints.map((p,i)=>`<button class="secondary" style="width:auto;padding:8px 10px;margin:0" onclick="jumpToPoint(${i})">${p.name} ${p.t.toFixed(2)}秒</button>`).join("");}
+function jumpToPoint(i){if(!detectedPoints[i])return;video.pause();video.currentTime=detectedPoints[i].t;}
+function scoreDetectedPoints(){if(!detectedPoints.length){document.getElementById('pointStatus').textContent="先に候補検出を押してね。";return;}showAverage(detectedPoints.map(p=>p.score),"トップ/インパクト/フィニッシュ候補平均");}
+function wait(ms){return new Promise(r=>setTimeout(r,ms))}
+function makeAdvice(result){const worst=result.items.slice().sort((a,b)=>a[1]-b[1])[0][0],ball=result.ball;if(worst.includes("左肩"))return"今日のメインは左肩。左肩からヘッドまで一本の棒として、左肩でクラブ全体を運ぶ。右手が主役になると右プッシュが出やすい。";if(worst.includes("前傾"))return"正面側の課題は前傾キープ。前傾に対する手の高さを変えず、インパクト後まで胸を止めない。";if(worst.includes("Xファクター"))return"肩腰差が弱いかも。腰だけ先に逃がすより、胸を止めずにベルトと一緒に回す。";if(worst.includes("フィニッシュ"))return"フィニッシュの止まりが課題。左腰の上に乗って3秒停止。";if(worst.includes("手元"))return"手元が暴れ気味。右手で押す前に左肩でクラブ全体を運ぶ。";if(ball==="右プッシュ"||ball==="スライス")return"右に出る日は、右肘右前ポケット、左肩一本、胸を止めないの3点セット。";return"今日のベースは良い。左肩一本、手の高さキープ、フィニッシュ停止を保存しよう。";}
+function makeDrills(result){const worst=result.items.slice().sort((a,b)=>a[1]-b[1])[0][0];if(worst.includes("左肩"))return["左肩一本 20球","トップ7割 10球","右手脱力素振り 10回","8割フル 10球"];if(worst.includes("前傾"))return["前傾キープ素振り 10回","ハーフショット 20球","手元高さキープ 15球","7割フル 10球"];if(worst.includes("Xファクター"))return["胸を止めない素振り 10回","ベルト回し 15球","左肩一本 15球","フィニッシュ停止 10球"];return["左肩一本 20球","右肘右前ポケット 15球","フィニッシュ3秒止め 10球","8割ショット 15球"];}
+function saveHistory(){if(!lastResult)return;const history=JSON.parse(localStorage.getItem("swingScoreHistory")||"[]");history.unshift({date:new Date().toLocaleString(),total:lastResult.total,club:lastResult.club,ball:lastResult.ball,mode:lastResult.mode,memo:document.getElementById('memo').value,advice:makeAdvice(lastResult)});localStorage.setItem("swingScoreHistory",JSON.stringify(history.slice(0,30)));renderHistory();statusEl.textContent="履歴に保存したよ。";}
+function renderHistory(){const el=document.getElementById('history'),history=JSON.parse(localStorage.getItem("swingScoreHistory")||"[]");if(!history.length){el.innerHTML='<p class="mini">まだ履歴なし。採点後に保存するとここに残る。</p>';return;}el.innerHTML=history.map(h=>`<div class="histItem"><div class="histTop"><div><strong>${h.club} / ${h.ball}</strong><div class="tiny">${h.date}｜${h.mode}</div></div><div class="histScore">${h.total}点</div></div>${h.memo?`<p class="mini">メモ：${escapeHtml(h.memo)}</p>`:""}<p class="tiny">${h.advice}</p></div>`).join("");}
+function clearHistory(){localStorage.removeItem("swingScoreHistory");renderHistory();}
+function copyReport(){if(!lastResult)return;const report=`スイング採点くん Ver.1.0β\n総合：${lastResult.total}点\nクラブ：${lastResult.club}\n球筋：${lastResult.ball}\n採点：${lastResult.mode}\n\n${lastResult.items.map(i=>`${i[0]}：${i[1]}点`).join("\n")}\n\nアドバイス：\n${makeAdvice(lastResult)}\n\n練習メニュー：\n${makeDrills(lastResult).join(" / ")}\n\nメモ：\n${document.getElementById('memo').value}`;navigator.clipboard?.writeText(report);statusEl.textContent="結果をコピーしたよ。";}
+function escapeHtml(str){return str.replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;","'":"&#039;"}[s]));}
+</script>
+</body>
+</html>
