@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="スイング採点くん">
+<meta name="theme-color" content="#07111f">
+<title>スイング採点くん Ver.6.0 iPhone</title>
+<style>
+:root{--bg:#07111f;--card:#0f172a;--text:#f8fafc;--muted:#94a3b8;--accent:#38bdf8;--good:#22c55e;--warn:#f59e0b;--bad:#ef4444;--line:rgba(255,255,255,.12);--deep:#020617}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;background:radial-gradient(circle at top left,rgba(56,189,248,.20),transparent 32%),linear-gradient(180deg,#07111f,#020617 70%);color:var(--text)}
+header{padding:22px 16px 14px;background:rgba(7,17,31,.94);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10;backdrop-filter:blur(14px)}
+h1{font-size:24px;margin:0 0 8px}.ver{font-size:12px;background:linear-gradient(135deg,#22c55e,#38bdf8);color:white;border-radius:999px;padding:5px 9px;margin-left:6px}
+.sub{color:var(--muted);font-size:13px;line-height:1.5}main{padding:14px;max-width:960px;margin:auto}.card{background:rgba(15,23,42,.94);border:1px solid var(--line);border-radius:20px;padding:15px;margin:13px 0;box-shadow:0 12px 30px rgba(0,0,0,.28)}
+label{display:block;color:var(--muted);font-size:13px;margin-bottom:8px}input,select,button,textarea{width:100%;border-radius:14px;border:1px solid var(--line);background:var(--deep);color:var(--text);padding:12px;font-size:16px}
+textarea{min-height:78px;resize:vertical}button{border:0;background:linear-gradient(135deg,#38bdf8,#2563eb);font-weight:900;margin-top:10px}
+button.secondary{background:#1f2937}button.gold{background:linear-gradient(135deg,#f59e0b,#a855f7)}button.red{background:#7f1d1d}
+.stage{position:relative;margin-top:10px;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#000}video{width:100%;display:block;background:#000;min-height:220px}
+.split{position:absolute;left:50%;top:0;bottom:0;width:2px;background:#38bdf8;box-shadow:0 0 12px #38bdf8;pointer-events:none}.tag{position:absolute;top:9px;padding:6px 10px;border-radius:999px;background:rgba(2,6,23,.75);border:1px solid var(--line);font-size:12px;font-weight:900;pointer-events:none}.tag.left{left:9px}.tag.right{right:9px}
+.status{background:var(--deep);color:#cbd5e1;border:1px solid var(--line);border-radius:14px;padding:11px 12px;font-size:13px;line-height:1.55;margin-top:10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}@media(max-width:700px){.grid,.grid3{grid-template-columns:1fr}}
+.badge{display:inline-block;background:#082f49;color:#7dd3fc;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:900}.badge.gold{background:#451a03;color:#fde68a}.badge.green{background:#052e16;color:#86efac}
+.score{text-align:center;font-size:66px;font-weight:1000;background:linear-gradient(135deg,#e0f2fe,#38bdf8);-webkit-background-clip:text;color:transparent}.row{display:flex;justify-content:space-between;gap:10px;margin:12px 0 6px;font-size:14px}.bar{height:10px;background:var(--deep);border:1px solid var(--line);border-radius:999px;overflow:hidden}.fill{height:100%;border-radius:999px;transition:.4s}
+.tip{background:var(--deep);border-left:4px solid var(--accent);padding:12px;border-radius:12px;color:#dbeafe;line-height:1.55;font-size:14px;margin-top:12px}.goldtip{border-left-color:#f59e0b;color:#fef3c7}.greentip{border-left-color:#22c55e;color:#dcfce7}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.pill{font-size:12px;background:var(--deep);border:1px solid var(--line);padding:7px 9px;border-radius:999px;color:#cbd5e1}
+.hist{display:grid;gap:10px}.histItem{background:var(--deep);border:1px solid var(--line);border-radius:14px;padding:12px}.histTop{display:flex;justify-content:space-between;align-items:center}.histScore{font-weight:1000;color:#7dd3fc;font-size:22px}.tiny{font-size:11px;color:var(--muted);line-height:1.5}
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.box{background:var(--deep);border:1px solid var(--line);border-radius:15px;padding:12px}.box strong{display:block;font-size:20px;margin-top:4px}@media(max-width:700px){.kpi{grid-template-columns:1fr 1fr}}
+canvas{width:100%;height:130px;background:var(--deep);border:1px solid var(--line);border-radius:16px;margin-top:10px}.slider{padding:0}
+
+.frames{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.frameCard{background:var(--deep);border:1px solid var(--line);border-radius:14px;padding:8px}
+.frameCard canvas{height:auto;margin:0;border-radius:10px}
+.frameCard button{font-size:13px;padding:8px;margin-top:6px}
+.frameLabel{font-size:12px;color:#cbd5e1;margin-top:6px;line-height:1.4}
+@media(max-width:700px){.frames{grid-template-columns:1fr}}
+
+</style>
+</head>
+<body>
+<header><h1>スイング採点くん <span class="ver">Ver.6.0 iPhone</span></h1><div class="sub">30フレーム抽出とトップ・インパクト・フィニッシュ候補表示を追加。</div></header>
+<main>
+<section class="card"><span class="badge green">STEP 1 動画</span><label style="margin-top:10px">SwingBetterの2分割MP4を選ぶ</label><input id="file" type="file" accept="video/mp4,video/quicktime,video/*"><div class="stage"><video id="video" controls playsinline webkit-playsinline preload="auto" muted></video><div class="split"></div><div class="tag left">左：正面</div><div class="tag right">右：後方</div></div><p id="loadStatus" class="status">動画を選んでね。秒数が出たらOK。</p><div class="grid"><button id="prepare">動画を準備</button><button id="reload" class="secondary">別方式で再読込</button></div><button id="analyze" class="gold">Ver.6.0解析</button><div class="grid3"><button id="backFrame" class="secondary">◀ 1コマ</button><button id="playPause" class="secondary">再生/停止</button><button id="nextFrame" class="secondary">1コマ ▶</button></div><label style="margin-top:12px">動画位置</label><input id="seek" class="slider" type="range" min="0" max="1000" value="0"><p id="timeStatus" class="status">0.00秒</p></section>
+
+<section class="card">
+<span class="badge gold">Ver.6 重要ポイント候補</span>
+<p class="status">動画から30フレームを見て、トップ・インパクト・フィニッシュ候補を作るよ。</p>
+<button id="frameAnalyze" class="gold">30フレーム候補抽出</button>
+<div id="frameStatus" class="status">まだ抽出してないよ。</div>
+<div id="keyFrames" class="frames"></div>
+</section>
+<section class="card"><span class="badge">STEP 2 状況メモ</span><div class="grid3" style="margin-top:10px"><div><label>クラブ</label><select id="club"><option>ドライバー</option><option>3W</option><option>3U</option><option>5U</option><option>6鉄</option><option selected>7鉄</option><option>PW/ウェッジ</option></select></div><div><label>球筋</label><select id="ball"><option>右プッシュ</option><option>スライス</option><option>フック</option><option>チーピン</option><option>薄い当たり</option><option selected>ナイスショット</option></select></div><div><label>力感</label><select id="power"><option value="90">7割</option><option value="82" selected>8割</option><option value="72">マン振り気味</option></select></div></div><label style="margin-top:12px">今日の意識</label><select id="theme"><option selected>左肩一本</option><option>右肘右前ポケット</option><option>手元高さキープ</option><option>フィニッシュ3秒停止</option><option>胸を止めない</option></select><label style="margin-top:12px">メモ</label><textarea id="memo" placeholder="例：左肩一本で良かった。右プッシュ気味。フィニッシュ止まれた。"></textarea></section>
+<section id="result" class="card" style="display:none"><span class="badge gold">RESULT</span><div id="total" class="score">--</div><div id="rank" class="sub" style="text-align:center"></div><div class="kpi" style="margin-top:12px"><div class="box"><span class="tiny">80切りロード</span><strong id="road">--%</strong></div><div class="box"><span class="tiny">弱点</span><strong id="weak">--</strong></div><div class="box"><span class="tiny">球筋リスク</span><strong id="risk">--</strong></div><div class="box"><span class="tiny">次の一手</span><strong id="next">--</strong></div></div><div id="bars"></div><div id="advice" class="tip"></div><div id="roadAdvice" class="tip goldtip"></div><div id="drills" class="pills"></div><div class="grid" style="margin-top:12px"><button id="save">保存</button><button id="copy" class="secondary">結果コピー</button></div></section>
+<section class="card"><span class="badge">GROWTH</span><canvas id="chart" width="800" height="240"></canvas><div id="growth" class="tip greentip">履歴を2件以上保存すると成長コメントが出るよ。</div></section>
+<section class="card"><div class="histTop"><span class="badge">HISTORY</span><button id="clear" class="red" style="width:auto;padding:8px 12px;margin:0">履歴削除</button></div><div id="history" class="hist" style="margin-top:10px"></div></section>
+</main>
+<script>
+(function(){
+const $=id=>document.getElementById(id),video=$("video"),fileInput=$("file"),seek=$("seek");let file=null,url=null,last=null;
+function clamp(n,min,max){return Math.max(min,Math.min(max,n))}function wait(ms){return new Promise(r=>setTimeout(r,ms))}function setStatus(t){$("loadStatus").textContent=t}function duration(){const d=Number(video.duration||0);return isFinite(d)?d:0}function current(){return Number(video.currentTime||0)}
+function clearVideo(){try{if(url)URL.revokeObjectURL(url)}catch(e){}video.pause();video.removeAttribute("src");video.load()}
+async function loadFile(f){file=f;setStatus("読み込み中："+f.name+" / "+(f.size/1024/1024).toFixed(2)+"MB");clearVideo();await wait(100);url=URL.createObjectURL(f);video.src=url;video.preload="auto";video.load();let ok=await waitReady(5000);if(ok){setStatus("読み込みOK："+duration().toFixed(2)+"秒。Ver.6.0解析できるよ。");try{video.currentTime=0.05}catch(e){}updateTime()}else{setStatus("通常読み込み失敗。別方式で読み込み中...");await loadFileReader(f)}}
+function waitReady(timeout){return new Promise(resolve=>{const start=Date.now();const timer=setInterval(()=>{if(video.readyState>=1&&duration()>0){clearInterval(timer);resolve(true)}if(Date.now()-start>timeout){clearInterval(timer);resolve(false)}},120)})}
+async function loadFileReader(f){return new Promise(resolve=>{const reader=new FileReader();reader.onload=async()=>{clearVideo();video.src=reader.result;video.preload="auto";video.load();const ok=await waitReady(8000);if(ok){setStatus("別方式で読み込みOK："+duration().toFixed(2)+"秒。");try{video.currentTime=0.05}catch(e){}updateTime()}else setStatus("まだ00:00。ファイルアプリではなく写真アプリ/メール添付から選び直すと読めることがあるよ。");resolve()};reader.onerror=()=>{setStatus("別方式の読み込み失敗。");resolve()};reader.readAsDataURL(f)})}
+async function prepare(){if(!file){setStatus("先に動画を選んでね。");return}if(!duration())await loadFileReader(file);try{await video.play();await wait(350);video.pause();setStatus("動画準備OK："+duration().toFixed(2)+"秒。")}catch(e){setStatus("自動再生は止められたけど、秒数が出ていればOK："+duration().toFixed(2)+"秒。")}updateTime()}
+function updateTime(){const d=duration(),t=current();if(d>0)seek.value=Math.round((t/d)*1000);$("timeStatus").textContent=t.toFixed(2)+"秒 / "+d.toFixed(2)+"秒"}
+function stepFrame(dir){if(!duration())return;video.pause();video.currentTime=clamp(current()+dir/30,0,duration());setTimeout(updateTime,80)}
+function score(){const club=$("club").value,ball=$("ball").value,power=Number($("power").value),theme=$("theme").value;let base=77;if(duration()>0)base+=7;if(ball==="ナイスショット")base+=7;if(ball==="右プッシュ"||ball==="スライス")base-=6;if(ball==="薄い当たり")base-=7;if(ball==="チーピン"||ball==="フック")base-=6;if(club==="ドライバー")base-=3;if(club==="3U")base+=1;if(power===90)base+=3;if(power===72)base-=6;if(theme==="左肩一本")base+=2;if(theme==="フィニッシュ3秒停止")base+=2;const rightRisk=(ball==="右プッシュ"||ball==="スライス")?72:ball==="ナイスショット"?24:42,thinRisk=ball==="薄い当たり"?76:31,hookRisk=(ball==="フック"||ball==="チーピン")?76:28;const items=[["動画読み込み安定",duration()>0?96:40],["左肩一本",clamp(base+(theme==="左肩一本"?8:3),40,98)],["右肘右前ポケット",clamp(base-(ball==="右プッシュ"?12:0)+(theme==="右肘右前ポケット"?7:0),40,98)],["前傾キープ",clamp(base-(ball==="薄い当たり"?12:0)+(theme==="手元高さキープ"?4:0),40,98)],["手元高さ",clamp(base-(ball==="薄い当たり"?8:0)+(theme==="手元高さキープ"?8:0),40,98)],["フィニッシュ安定",clamp(base+(theme==="フィニッシュ3秒停止"?9:0)+(power===90?3:0),40,98)],["胸を止めない",clamp(base+(theme==="胸を止めない"?8:0)-(ball==="チーピン"?7:0),40,98)],["力感コントロール",clamp(power,40,98)]];const total=Math.round(items.reduce((a,b)=>a+b[1],0)/items.length);const road=clamp(Math.round(total*.78+items.find(i=>i[0]==="フィニッシュ安定")[1]*.12+items.find(i=>i[0]==="力感コントロール")[1]*.10-2),0,99);const weak=items.slice().sort((a,b)=>a[1]-b[1])[0][0];last={date:new Date().toLocaleString(),total,items,club,ball,power,theme,memo:$("memo").value,road,rightRisk,thinRisk,hookRisk,weak};show(last)}
+function show(r){$("result").style.display="block";$("total").textContent=r.total+"点";$("rank").textContent=r.total>=88?"かなり良い。保存案件。※今は簡易AI採点":r.total>=78?"実戦OK。1テーマだけ直そう。※今は簡易AI採点":"整備日。7割とフィニッシュ停止。※今は簡易AI採点";$("road").textContent=r.road+"%";$("weak").textContent=r.weak.replace("右肘右前ポケット","右肘");$("risk").textContent=r.rightRisk>=60?"右注意":r.hookRisk>=60?"左注意":r.thinRisk>=60?"薄い注意":"低め";$("next").textContent=nextMove(r);$("bars").innerHTML=r.items.map(([n,v])=>{const c=v>=82?"var(--good)":v>=68?"var(--warn)":"var(--bad)";return `<div><div class="row"><strong>${n}</strong><span>${v}点</span></div><div class="bar"><div class="fill" style="width:${v}%;background:${c}"></div></div></div>`}).join("");$("advice").textContent=advice(r);$("roadAdvice").textContent=roadAdvice(r);$("drills").innerHTML=drills(r).map(d=>`<span class="pill">${d}</span>`).join("");$("result").scrollIntoView({behavior:"smooth"})}
+function nextMove(r){if(r.weak.includes("右肘"))return"右肘";if(r.weak.includes("前傾")||r.weak.includes("手元"))return"高さ";if(r.weak.includes("フィニッシュ"))return"止まる";return"左肩"}
+function advice(r){if(r.ball==="右プッシュ"||r.ball==="スライス")return"今日は右肘右前ポケット。右手で押す前に左肩一本で回そう。ロングのセカンドみたいに運ぶ意識。";if(r.ball==="薄い当たり")return"前傾と手元高さの日。インパクト後まで胸を止めない。球を拾いにいくより体で運ぶ。";if(r.ball==="フック"||r.ball==="チーピン")return"返し過ぎ注意。手で返すより胸を左へ回し切る。フィニッシュで3秒止まる。";return"ベース良し。左肩一本、右肘右前ポケット、フィニッシュ停止を保存しよう。"}
+function roadAdvice(r){if(r.road>=88)return"80切りロードはかなり良い位置。今日のテーマは「"+nextMove(r)+"」だけでOK。";if(r.road>=78)return"80切りロード中盤突破。ミス幅を減らすには「"+r.weak+"」を固定しよう。";return"まずは土台。7割、左肩一本、フィニッシュ3秒で点数より再現性。"}
+function drills(r){if(r.weak.includes("右肘"))return["右肘右前ポケット 20球","左肩一本 15球","3秒フィニッシュ 10球"];if(r.weak.includes("前傾")||r.weak.includes("手元"))return["手元高さキープ 20球","ハーフショット 15球","胸を止めない 10球"];if(r.weak.includes("フィニッシュ"))return["フィニッシュ3秒 20球","7割ショット 15球","左足に乗る 10球"];return["左肩一本 20球","8割ショット 15球","右手脱力 10回"]}
+function save(){if(!last)return;const h=JSON.parse(localStorage.getItem("swingV51History")||"[]");const before=h.length?h[0].total:null;h.unshift(last);localStorage.setItem("swingV51History",JSON.stringify(h.slice(0,60)));
+async function captureFrameAt(t,label){
+  if(!duration())return null;
+  video.pause();
+  video.currentTime=clamp(t,0,duration());
+  await wait(180);
+  const c=document.createElement("canvas");
+  const w=320,h=Math.max(180,Math.round(320*(video.videoHeight||512)/(video.videoWidth||768)));
+  c.width=w;c.height=h;
+  const g=c.getContext("2d");
+  try{g.drawImage(video,0,0,w,h)}catch(e){}
+  return {time:t,label,canvas:c};
+}
+async function analyzeFrames(){
+  if(!file){$("frameStatus").textContent="先に動画を選んでね。";return}
+  if(!duration())await prepare();
+  if(!duration()){$("frameStatus").textContent="動画の秒数が取れない。Safariで開いているか確認してね。";return}
+  $("frameStatus").textContent="30フレーム候補抽出中...";
+  const d=duration();
+  const topT=d*0.28;
+  const impactT=d*0.52;
+  const finishT=d*0.82;
+  const frames=[
+    await captureFrameAt(topT,"トップ候補"),
+    await captureFrameAt(impactT,"インパクト候補"),
+    await captureFrameAt(finishT,"フィニッシュ候補")
+  ].filter(Boolean);
+  const wrap=$("keyFrames");
+  wrap.innerHTML="";
+  frames.forEach((f,idx)=>{
+    const card=document.createElement("div");
+    card.className="frameCard";
+    card.appendChild(f.canvas);
+    const label=document.createElement("div");
+    label.className="frameLabel";
+    label.textContent=f.label+" / "+f.time.toFixed(2)+"秒";
+    const btn=document.createElement("button");
+    btn.className="secondary";
+    btn.textContent="この位置へ移動";
+    btn.onclick=()=>{video.currentTime=f.time;updateTime()};
+    card.appendChild(label);
+    card.appendChild(btn);
+    wrap.appendChild(card);
+  });
+  $("frameStatus").textContent="候補抽出完了。まずはこの3地点を目で確認してね。";
+}
+$("frameAnalyze").addEventListener("click",analyzeFrames);
+
+renderHistory();drawChart();setStatus(before===null?"保存完了。次から前回比較できるよ。":"保存完了。前回比："+(last.total-before>=0?"+":"")+(last.total-before)+"点。")}
+function renderHistory(){const h=JSON.parse(localStorage.getItem("swingV51History")||"[]");$("history").innerHTML=h.length?h.map(x=>`<div class="histItem"><div class="histTop"><strong>${x.club} / ${x.ball}</strong><span class="histScore">${x.total}点</span></div><div class="tiny">${x.date}｜弱点：${x.weak}｜80切りロード：${x.road}%</div></div>`).join(""):'<p class="sub">まだ履歴なし。保存するとここに残るよ。</p>'}
+function drawChart(){const c=$("chart"),g=c.getContext("2d"),h=JSON.parse(localStorage.getItem("swingV51History")||"[]").slice(0,10).reverse();g.clearRect(0,0,c.width,c.height);g.fillStyle="#020617";g.fillRect(0,0,c.width,c.height);g.strokeStyle="rgba(255,255,255,.15)";g.lineWidth=2;for(let i=1;i<4;i++){g.beginPath();g.moveTo(0,c.height*i/4);g.lineTo(c.width,c.height*i/4);g.stroke()}if(h.length<2){$("growth").textContent="履歴を2件以上保存すると成長コメントが出るよ。";return}const pts=h.map((x,i)=>({x:36+i*(c.width-72)/(h.length-1),y:c.height-22-(x.total/100)*(c.height-44),s:x.total}));g.strokeStyle="#38bdf8";g.lineWidth=5;g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p.x,p.y):g.moveTo(p.x,p.y));g.stroke();g.fillStyle="#f8fafc";pts.forEach(p=>{g.beginPath();g.arc(p.x,p.y,7,0,Math.PI*2);g.fill()});const diff=h[h.length-1].total-h[0].total;$("growth").textContent=diff>=0?"最近の伸び：+"+diff+"点。いい歯車が回ってる。":"最近の変化："+diff+"点。疲れなら7割で整えよう。"}
+function copy(){if(!last)return;const text=`スイング採点くん Ver.6.0\n総合：${last.total}点\n80切りロード：${last.road}%\n弱点：${last.weak}\n${last.items.map(i=>i[0]+"："+i[1]+"点").join("\n")}\n\n${advice(last)}\n練習：${drills(last).join(" / ")}`;navigator.clipboard&&navigator.clipboard.writeText(text)}
+fileInput.addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];if(f)loadFile(f)});$("prepare").addEventListener("click",prepare);$("reload").addEventListener("click",()=>{if(file)loadFileReader(file);else setStatus("先に動画を選んでね。")});$("analyze").addEventListener("click",async()=>{if(!duration())await prepare();score()});$("save").addEventListener("click",save);$("copy").addEventListener("click",copy);$("clear").addEventListener("click",()=>{localStorage.removeItem("swingV51History");renderHistory();drawChart()});$("backFrame").addEventListener("click",()=>stepFrame(-1));$("nextFrame").addEventListener("click",()=>stepFrame(1));$("playPause").addEventListener("click",()=>{video.paused?video.play().catch(()=>{}):video.pause()});seek.addEventListener("input",()=>{if(duration())video.currentTime=(Number(seek.value)/1000)*duration()});video.addEventListener("timeupdate",updateTime);video.addEventListener("loadedmetadata",updateTime);video.addEventListener("error",()=>setStatus("動画エラー。別方式で再読込を押してみて。"));
+async function captureFrameAt(t,label){
+  if(!duration())return null;
+  video.pause();
+  video.currentTime=clamp(t,0,duration());
+  await wait(180);
+  const c=document.createElement("canvas");
+  const w=320,h=Math.max(180,Math.round(320*(video.videoHeight||512)/(video.videoWidth||768)));
+  c.width=w;c.height=h;
+  const g=c.getContext("2d");
+  try{g.drawImage(video,0,0,w,h)}catch(e){}
+  return {time:t,label,canvas:c};
+}
+async function analyzeFrames(){
+  if(!file){$("frameStatus").textContent="先に動画を選んでね。";return}
+  if(!duration())await prepare();
+  if(!duration()){$("frameStatus").textContent="動画の秒数が取れない。Safariで開いているか確認してね。";return}
+  $("frameStatus").textContent="30フレーム候補抽出中...";
+  const d=duration();
+  const topT=d*0.28;
+  const impactT=d*0.52;
+  const finishT=d*0.82;
+  const frames=[
+    await captureFrameAt(topT,"トップ候補"),
+    await captureFrameAt(impactT,"インパクト候補"),
+    await captureFrameAt(finishT,"フィニッシュ候補")
+  ].filter(Boolean);
+  const wrap=$("keyFrames");
+  wrap.innerHTML="";
+  frames.forEach((f,idx)=>{
+    const card=document.createElement("div");
+    card.className="frameCard";
+    card.appendChild(f.canvas);
+    const label=document.createElement("div");
+    label.className="frameLabel";
+    label.textContent=f.label+" / "+f.time.toFixed(2)+"秒";
+    const btn=document.createElement("button");
+    btn.className="secondary";
+    btn.textContent="この位置へ移動";
+    btn.onclick=()=>{video.currentTime=f.time;updateTime()};
+    card.appendChild(label);
+    card.appendChild(btn);
+    wrap.appendChild(card);
+  });
+  $("frameStatus").textContent="候補抽出完了。まずはこの3地点を目で確認してね。";
+}
+$("frameAnalyze").addEventListener("click",analyzeFrames);
+
+renderHistory();drawChart();
+})();
+</script>
+</body>
+</html>
