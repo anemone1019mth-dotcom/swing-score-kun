@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>スイング採点くん Ver.4.1 Safe</title>
+  <meta name="theme-color" content="#07111f">
+  <style>
+    :root{--bg:#07111f;--card:#0f172a;--text:#f8fafc;--muted:#94a3b8;--accent:#38bdf8;--good:#22c55e;--warn:#f59e0b;--bad:#ef4444;--line:rgba(255,255,255,.10)}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;background:linear-gradient(180deg,#07111f,#020617);color:var(--text)}
+    header{padding:20px 16px 12px;position:sticky;top:0;z-index:10;backdrop-filter:blur(16px);background:rgba(7,17,31,.88);border-bottom:1px solid var(--line)}
+    h1{font-size:22px;margin:0 0 6px}.version{display:inline-block;background:linear-gradient(135deg,#22c55e,#38bdf8);color:white;font-size:12px;font-weight:900;border-radius:999px;padding:5px 9px;margin-left:8px}
+    .sub,.mini{color:var(--muted);font-size:13px;line-height:1.55}main{padding:14px;max-width:1050px;margin:auto}
+    .card{background:rgba(15,23,42,.91);border:1px solid var(--line);border-radius:20px;padding:15px;margin:13px 0;box-shadow:0 14px 34px rgba(0,0,0,.34)}
+    label{display:block;font-size:13px;color:var(--muted);margin:0 0 8px}
+    input,select,button,textarea{width:100%;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:#020617;color:var(--text);padding:12px;font-size:16px}
+    textarea{min-height:82px;resize:vertical}button{background:linear-gradient(135deg,#38bdf8,#2563eb);border:0;font-weight:900;margin-top:10px;cursor:pointer}
+    button.secondary{background:#1f2937}button.premium{background:linear-gradient(135deg,#f59e0b,#a855f7)}button.danger{background:#7f1d1d}
+    .stage{position:relative;width:100%;border-radius:18px;overflow:hidden;background:#000;border:1px solid var(--line);margin-top:10px}
+    video,canvas{width:100%;display:block}video{min-height:220px;background:#000}.overlay{position:absolute;inset:0;pointer-events:none}
+    .splitLine{position:absolute;left:50%;top:0;bottom:0;width:2px;background:rgba(56,189,248,.85);box-shadow:0 0 12px rgba(56,189,248,.8);pointer-events:none}
+    .tag{position:absolute;top:10px;padding:6px 10px;border-radius:999px;background:rgba(2,6,23,.75);border:1px solid var(--line);font-size:12px;font-weight:800;pointer-events:none}
+    .tag.left{left:10px}.tag.right{right:10px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    @media(max-width:760px){.grid,.grid3{grid-template-columns:1fr}}
+    .badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#082f49;color:#7dd3fc;font-size:12px;font-weight:800}.badge.gold{background:#451a03;color:#fde68a}.badge.green{background:#052e16;color:#86efac}
+    .status{padding:10px 12px;border-radius:14px;background:#020617;color:#cbd5e1;border:1px solid rgba(255,255,255,.08);font-size:13px;line-height:1.5}
+    .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}.box{background:#020617;border:1px solid rgba(255,255,255,.08);border-radius:15px;padding:12px}.box strong{display:block;font-size:20px;margin-top:4px}
+    @media(max-width:760px){.kpi{grid-template-columns:1fr 1fr}}
+    .score{text-align:center;font-size:64px;font-weight:1000;letter-spacing:-3px;background:linear-gradient(135deg,#fef3c7,#38bdf8);-webkit-background-clip:text;color:transparent}
+    .item{margin:12px 0}.row{display:flex;justify-content:space-between;gap:10px;font-size:14px;margin-bottom:6px}.bar{height:10px;background:#020617;border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.08)}.fill{height:100%;border-radius:999px;transition:.8s}
+    .tip{background:#020617;border-left:4px solid var(--accent);padding:12px;border-radius:12px;color:#dbeafe;line-height:1.55;font-size:14px;margin-top:12px}.goldtip{border-left-color:#f59e0b;color:#fef3c7}.coach{border-left-color:#a855f7;color:#f3e8ff}
+    .pillrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.pill{font-size:12px;background:#020617;border:1px solid rgba(255,255,255,.1);padding:7px 9px;border-radius:999px;color:#cbd5e1}
+    .history{display:grid;gap:10px}.histItem{background:#020617;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px}.histTop{display:flex;justify-content:space-between;gap:10px;align-items:center}.histScore{font-weight:1000;font-size:22px;color:#7dd3fc}.tiny{font-size:11px;color:var(--muted);line-height:1.45}
+  </style>
+</head>
+<body>
+<header>
+  <h1>スイング採点くん <span class="version">Ver.4.1 Safe</span></h1>
+  <div class="sub">白画面対策版。まず動画読み込みを安定させる安全運用モード。</div>
+</header>
+
+<main>
+  <section class="card">
+    <span class="badge green">VIDEO LOADER</span>
+    <p id="loaderStatus" class="status">動画を選ぶと読み込み状況が出るよ。</p>
+    <button class="secondary" id="reloadBtn">動画を再読み込み</button>
+  </section>
+
+  <section class="card">
+    <label>正面＋後方の2分割動画を選択（左：正面 / 右：後方）</label>
+    <input id="videoInput" type="file" accept="video/mp4,video/*" />
+    <div class="stage">
+      <video id="video" controls playsinline webkit-playsinline preload="metadata" muted></video>
+      <div class="splitLine"></div>
+      <div class="tag left">左：正面</div>
+      <div class="tag right">右：後方</div>
+    </div>
+    <div class="grid">
+      <button id="previewBtn">動画を表示/準備</button>
+      <button class="premium" id="analyzeBtn">Safe 解析</button>
+    </div>
+    <p id="status" class="status">Ver.4.1 Safe。まず動画が再生できるか確認するよ。</p>
+  </section>
+
+  <section class="card">
+    <div class="grid3">
+      <div><label>クラブ</label><select id="club"><option>ドライバー</option><option>3W</option><option>5U</option><option>6鉄</option><option selected>7鉄</option><option>PW/ウェッジ</option></select></div>
+      <div><label>球筋メモ</label><select id="ball"><option>右プッシュ</option><option>スライス</option><option>フック</option><option>チーピン</option><option>薄い当たり</option><option selected>ナイスショット</option></select></div>
+      <div><label>力感</label><select id="power"><option value="90">7割</option><option value="80" selected>8割</option><option value="70">マン振り気味</option></select></div>
+    </div>
+    <label style="margin-top:12px">メモ</label>
+    <textarea id="memo" placeholder="例：左肩一本。右肘右前ポケット。フィニッシュ前のめり。"></textarea>
+  </section>
+
+  <section id="result" class="card" style="display:none">
+    <span class="badge gold">SAFE SCORE</span>
+    <div class="score" id="total">--</div>
+    <div id="rank" class="sub"></div>
+    <div id="bars"></div>
+    <div class="tip coach" id="advice"></div>
+    <div class="pillrow" id="drills"></div>
+    <div class="grid" style="margin-top:12px">
+      <button id="saveBtn">この結果を保存</button>
+      <button class="secondary" id="copyBtn">結果をコピー</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="histTop">
+      <span class="badge">HISTORY</span>
+      <button class="danger" id="clearBtn" style="width:auto;padding:8px 12px;margin:0">履歴削除</button>
+    </div>
+    <div id="history" class="history" style="margin-top:10px"></div>
+  </section>
+</main>
+
+<script>
+(function(){
+  const APP_VERSION = "4.1-safe";
+  const $ = (id) => document.getElementById(id);
+
+  const videoInput = $("videoInput");
+  const video = $("video");
+  const loaderStatus = $("loaderStatus");
+  const statusEl = $("status");
+
+  let selectedFile = null;
+  let objectUrl = null;
+  let lastResult = null;
+
+  function setText(el, text){ if(el) el.textContent = text; }
+  function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
+  function wait(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
+
+  async function cleanupOldStuff(){
+    try{
+      if("serviceWorker" in navigator){
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for(const reg of regs){ await reg.unregister(); }
+      }
+      if("caches" in window){
+        const keys = await caches.keys();
+        for(const key of keys){ await caches.delete(key); }
+      }
+      localStorage.setItem("swingScoreCleanedVersion", APP_VERSION);
+    }catch(e){}
+  }
+
+  function setupVideoEvents(){
+    video.addEventListener("loadedmetadata", function(){
+      setText(loaderStatus, "メタデータOK：" + safeDuration() + "秒");
+    });
+    video.addEventListener("loadeddata", function(){
+      setText(loaderStatus, "動画データOK：" + safeDuration() + "秒。再生できる状態。");
+    });
+    video.addEventListener("canplay", function(){
+      setText(loaderStatus, "再生準備OK：" + safeDuration() + "秒。Safe解析できるよ。");
+    });
+    video.addEventListener("error", function(){
+      setText(loaderStatus, "動画読み込みエラー。再読み込みを押してみて。");
+    });
+  }
+
+  function safeDuration(){
+    const d = Number(video.duration || 0);
+    return isFinite(d) ? d.toFixed(2) : "0.00";
+  }
+
+  async function loadVideo(file){
+    selectedFile = file;
+    setText(loaderStatus, "選択：" + file.name + " / " + (file.size/1024/1024).toFixed(2) + "MB。読み込み中...");
+
+    try{
+      if(objectUrl) URL.revokeObjectURL(objectUrl);
+    }catch(e){}
+
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
+    await wait(100);
+
+    objectUrl = URL.createObjectURL(file);
+    video.src = objectUrl;
+    video.load();
+
+    const ok = await waitForReady(5000);
+    if(ok){
+      setText(loaderStatus, "読み込み成功：" + safeDuration() + "秒。");
+      setText(statusEl, "動画OK。Safe解析を押してね。");
+      try { video.currentTime = Math.min(0.05, Math.max(0, video.duration - 0.05)); } catch(e){}
+      return;
+    }
+
+    setText(loaderStatus, "URL読み込みが不安定。別方式で読み込み中...");
+    await loadByDataUrl(file);
+  }
+
+  function waitForReady(timeout){
+    return new Promise(resolve => {
+      const start = Date.now();
+      const timer = setInterval(() => {
+        const d = Number(video.duration || 0);
+        if(video.readyState >= 1 && isFinite(d) && d > 0){
+          clearInterval(timer);
+          resolve(true);
+        }
+        if(Date.now() - start > timeout){
+          clearInterval(timer);
+          resolve(false);
+        }
+      }, 120);
+    });
+  }
+
+  function loadByDataUrl(file){
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = async function(){
+        video.pause();
+        video.src = reader.result;
+        video.load();
+        const ok = await waitForReady(7000);
+        if(ok){
+          setText(loaderStatus, "別方式で読み込み成功：" + safeDuration() + "秒。");
+          setText(statusEl, "動画OK。Safe解析を押してね。");
+        }else{
+          setText(loaderStatus, "読み込み失敗。動画を写真アプリで一度再生してから、もう一度選んでみて。");
+        }
+        resolve();
+      };
+      reader.onerror = function(){
+        setText(loaderStatus, "別方式の読み込みも失敗。");
+        resolve();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function preparePreview(){
+    if(!selectedFile){
+      setText(loaderStatus, "先に動画を選んでね。");
+      return;
+    }
+    if(!Number(video.duration || 0)){
+      await loadVideo(selectedFile);
+    }
+    try{
+      video.muted = true;
+      await video.play();
+      await wait(300);
+      video.pause();
+      setText(loaderStatus, "プレビューOK：" + safeDuration() + "秒。");
+    }catch(e){
+      setText(loaderStatus, "自動再生は止められたけど、動画時間が出ていれば解析できるよ：" + safeDuration() + "秒。");
+    }
+  }
+
+  function makeSafeScore(){
+    const duration = Number(video.duration || 0);
+    const club = $("club").value;
+    const ball = $("ball").value;
+    const power = Number($("power").value || 80);
+
+    let base = 76;
+    if(duration > 0) base += 5;
+    if(ball === "ナイスショット") base += 7;
+    if(ball === "右プッシュ" || ball === "スライス") base -= 4;
+    if(ball === "薄い当たり") base -= 5;
+    if(ball === "チーピン") base -= 6;
+    if(power === 90) base += 3;
+    if(power === 70) base -= 4;
+    if(club === "ドライバー") base -= 2;
+
+    const items = [
+      ["動画読み込み安定", duration > 0 ? 92 : 40],
+      ["左肩一本イメージ", clamp(base + 5, 40, 96)],
+      ["右肘ポケット指数", clamp(base - (ball === "右プッシュ" ? 8 : 0), 40, 96)],
+      ["前傾キープ", clamp(base - (ball === "薄い当たり" ? 9 : 0), 40, 96)],
+      ["フィニッシュ安定", clamp(base + (power === 90 ? 4 : 0), 40, 96)],
+      ["力感コントロール", clamp(power, 40, 96)]
+    ];
+
+    const total = Math.round(items.reduce((a,b)=>a+b[1],0)/items.length);
+    return { total, items, club, ball, power, mode:"Safe解析", date:new Date().toLocaleString() };
+  }
+
+  async function analyze(){
+    if(!selectedFile){
+      setText(statusEl, "先に動画を選んでね。");
+      return;
+    }
+    if(!Number(video.duration || 0)){
+      await loadVideo(selectedFile);
+    }
+    lastResult = makeSafeScore();
+    showResult(lastResult);
+    setText(statusEl, "Safe解析完了。動画が動くか確認できたら、次はAI骨格版を戻すよ。");
+  }
+
+  function showResult(result){
+    $("result").style.display = "block";
+    $("total").textContent = result.total + "点";
+    $("rank").textContent = result.total >= 85 ? "かなり良い。保存して比較したい日。" :
+      result.total >= 75 ? "実戦OK。今日は1テーマだけ直そう。" :
+      "整備日。7割でフィニッシュ停止から。";
+
+    $("bars").innerHTML = result.items.map(([name,val]) => {
+      const color = val >= 82 ? "var(--good)" : val >= 68 ? "var(--warn)" : "var(--bad)";
+      return '<div class="item"><div class="row"><strong>'+name+'</strong><span>'+val+'点</span></div><div class="bar"><div class="fill" style="width:'+val+'%;background:'+color+'"></div></div></div>';
+    }).join("");
+
+    $("advice").textContent = makeAdvice(result);
+    $("drills").innerHTML = makeDrills(result).map(d => '<span class="pill">'+d+'</span>').join("");
+    $("result").scrollIntoView({behavior:"smooth"});
+  }
+
+  function makeAdvice(result){
+    if(result.ball === "右プッシュ" || result.ball === "スライス"){
+      return "右に出る日は、右肘右前ポケット、左肩一本、胸を止めない。この3点だけでいいよ。";
+    }
+    if(result.ball === "薄い当たり"){
+      return "薄い日は前傾と手元高さ。前傾に対する手の高さを変えず、インパクト後まで胸を回そう。";
+    }
+    if(result.ball === "フック" || result.ball === "チーピン"){
+      return "つかまり過ぎ注意。手で返すより胸を左へ回し切る。";
+    }
+    return "今日のベースは良い。左肩一本、右肘右前ポケット、フィニッシュ停止を保存しよう。";
+  }
+
+  function makeDrills(result){
+    if(result.ball === "右プッシュ" || result.ball === "スライス"){
+      return ["右肘右前ポケット 20球","左肩一本 20球","フィニッシュ3秒 10球"];
+    }
+    if(result.ball === "薄い当たり"){
+      return ["前傾キープ素振り 10回","ハーフショット 20球","手元高さキープ 15球"];
+    }
+    return ["左肩一本 20球","8割ショット 15球","フィニッシュ3秒 10球"];
+  }
+
+  function saveHistory(){
+    if(!lastResult) return;
+    const history = JSON.parse(localStorage.getItem("swingScoreHistory") || "[]");
+    history.unshift(lastResult);
+    localStorage.setItem("swingScoreHistory", JSON.stringify(history.slice(0,50)));
+    renderHistory();
+    setText(statusEl, "履歴に保存したよ。");
+  }
+
+  function renderHistory(){
+    const history = JSON.parse(localStorage.getItem("swingScoreHistory") || "[]");
+    if(!history.length){
+      $("history").innerHTML = '<p class="mini">まだ履歴なし。採点後に保存するとここに残る。</p>';
+      return;
+    }
+    $("history").innerHTML = history.map(h => '<div class="histItem"><div class="histTop"><div><strong>'+h.club+' / '+h.ball+'</strong><div class="tiny">'+h.date+'｜'+h.mode+'</div></div><div class="histScore">'+h.total+'点</div></div></div>').join("");
+  }
+
+  function clearHistory(){
+    localStorage.removeItem("swingScoreHistory");
+    renderHistory();
+  }
+
+  function copyReport(){
+    if(!lastResult) return;
+    const text = "スイング採点くん Ver.4.1 Safe\n総合：" + lastResult.total + "点\n" +
+      lastResult.items.map(i => i[0] + "：" + i[1] + "点").join("\n") +
+      "\n\n" + makeAdvice(lastResult);
+    if(navigator.clipboard) navigator.clipboard.writeText(text);
+    setText(statusEl, "結果をコピーしたよ。");
+  }
+
+  window.addEventListener("load", function(){
+    cleanupOldStuff();
+    setupVideoEvents();
+    renderHistory();
+
+    videoInput.addEventListener("change", function(e){
+      const file = e.target.files && e.target.files[0];
+      if(file) loadVideo(file);
+    });
+    $("reloadBtn").addEventListener("click", function(){
+      if(selectedFile) loadVideo(selectedFile);
+      else setText(loaderStatus, "先に動画を選んでね。");
+    });
+    $("previewBtn").addEventListener("click", preparePreview);
+    $("analyzeBtn").addEventListener("click", analyze);
+    $("saveBtn").addEventListener("click", saveHistory);
+    $("copyBtn").addEventListener("click", copyReport);
+    $("clearBtn").addEventListener("click", clearHistory);
+  });
+
+  window.addEventListener("error", function(e){
+    document.body.innerHTML = '<div style="padding:20px;font-family:-apple-system;background:#07111f;color:white;min-height:100vh"><h1>スイング採点くん Ver.4.1 Safe</h1><p>エラーで止まったけど、白画面は回避したよ。</p><pre style="white-space:pre-wrap;background:#020617;padding:12px;border-radius:12px">'+ String(e.message) +'</pre></div>';
+  });
+})();
+</script>
+</body>
+</html>
